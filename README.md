@@ -1,2 +1,2 @@
-**Numerical_HT**
+# Numerical_HT 
 Numerical heat transfer is a repository containing numerical methods developed using Computational Fluid Mechanics and Heat Transfer (Anderson, et al) along with Numerical Heat Transfer (ME6335) at Georgia Tech with Dr. Satish Kumar.
