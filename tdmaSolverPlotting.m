@@ -25,6 +25,8 @@ T_analytic2 = -3000.*x./gamma + 500;
 figure; 
 subplot(1,2,1)
 plot(x, T_num1, "-O")
+xlabel("X")
+ylabel("Temperature")
 hold on
 plot(x,T_analytic1, "--")
 legend(["Numerical-TDMA", "Analytic"])
@@ -33,6 +35,8 @@ hold off
 
 subplot(1,2,2)
 plot(x, T_num2, "-O")
+xlabel("X")
+ylabel("Temperature")
 hold on
 plot(x,T_analytic2, "--")
 legend(["Numerical-TDMA", "Analytic"])
