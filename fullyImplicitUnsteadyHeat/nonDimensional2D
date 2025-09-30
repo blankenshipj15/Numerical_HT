@@ -1,0 +1,98 @@
+# nonDimensional2D is a solution implementaion for a 2D transient heat conduction problem with Dirichlet BCs and TDMA solver.
+# The problem is discretized in time using a fully implicit scheme.
+# Author: Jesse Blankenship
+# Last Updated: 9/29/2025
+
+import numpy as np
+import matplotlib.pyplot as plt
+from TDMA2DUnsteady import TDMA2DUnsteady
+import time
+
+# Problem parameters
+gamma = 1.0 # non-dimensional conductivity
+thetaBcLeft = 0.0 # Dirichlet left BC
+thetaBcRight = 0.0  # Dirichlet right BC
+thetaBcTop = 1.0 # Dirichlet top BC
+thetaBcBottom = 0.0 # Dirichlet bottom BC
+height = 1.0  # domain height (corresponds to non-dimensional y)
+width = 1.0  # domain width (corresponds to non-dimensional x)
+nX = 20 # number of cell centroids in x
+nY = 20 # number of cell centroids in y
+deltaX = width / (nX - 1) # distance between centroids in x
+deltaY = height / (nY - 1) # distance between centroids in y
+maxIter = 1000
+tolerance = 1e-3 # convergence tolerance of solution at each timestep
+timeStep = 0.0001 # non-dimensional timestep size
+steadyStateTolerance = 1e-6 # tolerance for steady state convergence
+maxTime = 3
+numberSteps = int(maxTime /  timeStep)
+
+# Initialize non-dimensional temperature array and coefficient arrays
+theta = np.zeros((nY, nX, numberSteps+1))
+thetaPrev = np.zeros((nY, nX)) # initial condition is 0 throughout domain
+thetaNumerical = np.zeros((nY+2, nX+2, numberSteps+1))
+
+time_start = time.time()
+t = 0.0 # initial time
+step = 0
+# need to begin with outer time loop
+while t < maxTime:
+    t += timeStep
+    step += 1
+    print(f"Step : {step}, Time : {t:.4f}")
+    T = TDMA2DUnsteady(nX, nY, width, height, thetaPrev, timeStep, gamma, tolerance, maxIter, thetaBcLeft, thetaBcRight, thetaBcTop, thetaBcBottom)
+    # Solve using the solve method
+    theta[:,:,step] = T.solve()
+
+    if np.max(np.abs(theta[:,:,step] - thetaPrev)) < steadyStateTolerance:
+        print(f"Steady state reached at time {t}")
+        break
+    # append the BCs the solution for plotting
+    thetaNumerical[0,:,step] = thetaBcBottom
+    thetaNumerical[-1,:,step] = thetaBcTop
+    thetaNumerical[:,0,step] = thetaBcLeft
+    thetaNumerical[:,-1,step] = thetaBcRight
+    thetaNumerical[1:-1,1:-1,step] = theta[:,:,step]
+    # update the previous time step solution
+    thetaPrev = theta[:,:,step]
+time_end = time.time()
+print("Computation time to converge: ", time_end - time_start)
+
+# plot for centerpoint temperature over time
+thetaCenter = thetaNumerical[nY//2,nX//2,:]
+plt.figure(1)
+plt.plot(np.linspace(0,t,step), thetaCenter[:step])
+plt.title("Centerpoint Non-Dimensional Temperature")
+plt.xlabel("Non-Dimensional Time ($\\tau$)")
+plt.ylabel("Non-Dimensional Temperature ($\\theta$)")
+plt.show()
+
+# plot the non-dimensional steady state temperature distribution contour
+plt.figure(2)
+X = np.linspace(0, width, nX+2)
+Y = np.linspace(0, height, nY+2)
+X, Y = np.meshgrid(X, Y)
+plt.contourf(X, Y, thetaNumerical[:,:,step-1], levels=50, cmap='plasma')
+plt.colorbar(label = "Non-Dimensional Temperature ($\\theta$)")
+plt.title("Non-Dimensional Temperature Distribution")
+plt.xlabel("X/D")
+plt.ylabel("Y/D")
+plt.show()
+
+# plot transient temperature distribution at vertical centerline
+plt.figure(3)
+plt.plot(Y[:,0], thetaNumerical[:,nX//2, 10], marker='o', markersize=4)
+plt.plot(Y[:,0], thetaNumerical[:,nX//2, 100], marker='.', markersize=4)
+plt.plot(Y[:,0], thetaNumerical[:,nX//2, 300], marker='x', markersize=4)
+plt.plot(Y[:,0], thetaNumerical[:,nX//2, 500], marker='^', markersize=4)
+plt.plot(Y[:,0], thetaNumerical[:,nX//2, 700], marker='s', markersize=4)
+plt.plot(Y[:,0], thetaNumerical[:,nX//2, step-1], marker='d', markersize=4)
+plt.legend(["$\\tau$ = 0.001", "$\\tau$ = 0.01","$\\tau$ = 0.03", "$\\tau$ = 0.05", "$\\tau$ = 0.07", "Steady State"])
+plt.title("Transient Non-Dimensional Temperature Distribution")
+plt.xlabel("Y/D")
+plt.ylabel("Non-Dimensional Temperature ($\\theta$)")
+plt.show()
+
+
+
+
