@@ -8,7 +8,7 @@ L   = 10.0
 u   = 1.0
 rho = 1.0
 A   = 10.0         
-nX  = 50
+nX  = 1000
 dx  = L / (nX - 1) 
 x   = np.linspace(dx/2, L - dx/2, nX) # locating the cell centers
 nRefinements = 5
@@ -46,10 +46,21 @@ def quadraticLimiter(r):
     else:
         psi = 1.0
     return psi
+# Superbee flux limiter function
+def superbeeLimiter(r):
+    # r = (phiE - phiP) / (phiP - phiW)
+    psi = max(0, min(2*r, 1), min(r, 1))
+
+    return psi
 
 maxIter   = 1000
 # convergence tolerance for TDMA iterations
 tolerance = 1e-5
+
+# Pick limiter function
+superbee = False
+quadratic = True
+
 for iter in range(maxIter):
     # allocate tri-diagonal coefficients each iteration
     a = np.zeros(nX)
@@ -84,9 +95,12 @@ for iter in range(maxIter):
 
             rw = (phiP_prev - phiW_prev) / (phiW_prev - phiWW_prev + 1e-10)
             re = (phiE_prev - phiP_prev) / (phiP_prev - phiW_prev + 1e-10)
-
-            psie = quadraticLimiter(re)
-            psiw = quadraticLimiter(rw)
+            if quadratic:
+                psie = quadraticLimiter(re)
+                psiw = quadraticLimiter(rw)
+            elif superbee:
+                psie = superbeeLimiter(re)
+                psiw = superbeeLimiter(rw)
 
             # deferred correction using quadratic limiter
             deferred_correction = (rho*u * (phiW_prev + psiw * (phiW_prev - phiWW_prev) / 2.0 - phiW_prev) 
