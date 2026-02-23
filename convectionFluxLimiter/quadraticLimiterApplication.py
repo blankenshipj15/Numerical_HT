@@ -58,8 +58,8 @@ maxIter   = 1000
 tolerance = 1e-5
 
 # Pick limiter function
-superbee = False
-quadratic = True
+superbee = True
+quadratic = False
 
 for iter in range(maxIter):
     # allocate tri-diagonal coefficients each iteration
